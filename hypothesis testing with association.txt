@@ -1,0 +1,87 @@
+# import libraries
+import codecademylib3
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt 
+import seaborn as sns
+from scipy.stats import ttest_ind
+from scipy.stats import f_oneway
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+# load data
+heart = pd.read_csv('heart_disease.csv')
+#print(heart.head())
+
+sns.boxplot(x = 'heart_disease', y = 'thalach', data = heart)
+plt.show()
+
+thalach_hd = heart.thalach[heart.heart_disease == 'presence']
+thalach_no_hd = heart.thalach[heart.heart_disease == 'absence']
+#print(thalach_hd)
+
+#difference in mean thalach for patients diagnosed with hd to patients without
+
+mean_diff = np.mean(thalach_hd) - np.mean(thalach_no_hd)
+#print(mean_diff)
+median_diff = np.median(thalach_hd) - np.median(thalach_no_hd)
+#print(median_diff)
+
+std_ratio = np.std(thalach_hd) / np.std(thalach_no_hd)
+#print(std_ratio)
+# running ttest with 0.05 significance threshold
+#is there a significant diff in average thalach for people with hd compared to people with no hd?
+
+tstat, pval = ttest_ind(thalach_hd, thalach_no_hd)
+#print(pval)
+#there is significant difference in average thalach for these groups
+
+#repeating the same with age
+plt.clf()
+sns.boxplot(x = 'heart_disease', y = 'age', data = heart)
+plt.show()
+
+#the boxplot show that there`s relationship between age and heart desease presence. Older people are more likely to have hd
+age_hd = heart.age[heart.heart_disease == 'presence']
+age_no_hd = heart.age[heart.heart_disease == 'absence']
+#count the mean difference
+mean_diff = np.mean(age_hd) - np.mean(age_no_hd)
+#print(mean_diff)
+median_diff = np.median(age_hd) - np.median(age_no_hd)
+#print(median_diff)
+
+std_ratio = np.std(age_hd) / np.std(age_no_hd)
+#print(std_ratio)
+#Null: the average age for a person without hd is equal to avg for a person with hd 
+tstat, pval = ttest_ind(age_hd, age_no_hd)
+#print(pval)
+
+
+#CHEST PAIN and MAX HEART RATE
+plt.clf()
+sns.boxplot(x = "cp", y = "thalach", data = heart)
+plt.show()
+
+thalach_typical = heart.thalach[heart.cp == 'typical angina']
+
+thalach_asymptom = heart.thalach[heart.cp == 'asymptomatic']
+
+thalach_nonangin = heart.thalach[heart.cp == 'non-anginal pain']
+
+thalach_atypical = heart.thalach[heart.cp == 'atypical angina']
+
+#NULL: People with typical, non-anginal, atypical, asymptomatic chest pain all have the same average thalach
+fstat, pval = f_oneway(thalach_typical, thalach_asymptom,thalach_nonangin, thalach_atypical)
+print(pval)
+#there is atleast one pair for which people with those pain types have significantly different average max heart rates during exercise
+
+#which pais are significantly different
+tukey_results = pairwise_tukeyhsd(heart.thalach, heart.cp, 0.05)
+print(tukey_results)
+
+#HEART DISEASE AND CHEST PAIN
+table = pd.crosstab(heart.heart_disease, heart.cp)
+print(table)
+from scipy.stats import chi2_contingency
+
+#NULL: there is NOT an association between chest pain type and whether or not someone is diagnosed with hd
+chi2, pval, dof, expected = chi2_contingency(table)
+print(pval)

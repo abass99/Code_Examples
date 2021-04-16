@@ -1,0 +1,95 @@
+import codecademylib3_seaborn
+from bs4 import BeautifulSoup
+import requests
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+webpage = requests.get("https://content.codecademy.com/courses/beautifulsoup/cacao/index.html")
+
+
+soup = BeautifulSoup(webpage.content, "html.parser")
+#print(soup)
+
+#searching for all the tags, that hold Rating
+all_ratings = soup.find_all(attrs={"class": "Rating"})
+#print(all_ratings)
+
+#storing all Rating attributes in list
+ratings = []
+for rating in all_ratings:
+  ratings.append(rating.get_text())
+#print(ratings)
+
+#removing first Rating item, as it seems like column name
+ratings.pop(0)
+#print(ratings)
+
+#changing ratings datatype to float using list comprehesion
+ratings = [float(i) for i in ratings]  
+#print(ratings)
+
+#historgram of ratings values
+plt.hist(ratings)
+plt.xlabel("Ratings")
+plt.ylabel("Counts")
+plt.title("Chocolate Ratings Distribution")
+plt.show()
+
+#tags with company names
+all_companies = soup.select(".Company") #getting all elements by css selector
+
+#list of company names
+company_names = []
+for comp in all_companies:
+  company_names.append(comp.get_text())
+company_names.pop(0)
+#print(company_names)
+
+# Creating data frames with company names and ratings
+
+d = {
+  "Company" : company_names,
+  "Rating" : ratings
+}
+
+data = pd.DataFrame.from_dict(d)
+#print(data.head())
+
+#avarage of company ratings
+data_grouped_by_company = data.groupby(["Company"]).mean()
+#print(data_grouped_by_company)
+
+#top 10 highest rated chocolate companies
+top_10 = data_grouped_by_company.nlargest(10, "Rating")
+#print(top_10)
+
+
+#IS more cacao better?
+Cocoa_percents = soup.select(".CocoaPercent")
+coca_p = []
+for p in Cocoa_percents:
+  coca_p.append(p.get_text().strip('%'))
+
+coca_p.pop(0)
+coca_p = [float(i) for i in coca_p]  
+#print(coca_p)
+#adding new column to df
+data['CocoaPercentage'] = coca_p
+
+#scatterplot of ratings vs cocoa percentage
+plt.clf()
+plt.scatter(data.CocoaPercentage, data.Rating)
+plt.xlabel("Cocoa Percentage")
+plt.ylabel("Rating")
+plt.title("Cocoa % vs Rating")
+z = np.polyfit(data.CocoaPercentage, data.Rating, 1)
+line_function = np.poly1d(z)
+plt.plot(data.CocoaPercentage, line_function(data.CocoaPercentage), "r--")
+plt.show()
+
+#boxplot
+
+
+

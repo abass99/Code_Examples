@@ -1,0 +1,51 @@
+# Import libraries
+import pandas as pd
+import numpy as np
+from scipy.stats import ttest_1samp
+# Load datasets
+lifespans = pd.read_csv('familiar_lifespan.csv')
+iron = pd.read_csv('familiar_iron.csv')
+
+
+#print(lifespans.head())
+vein_pack_lifespans = lifespans.lifespan[lifespans.pack == 'vein']
+
+#avg lifespan for Vein Pack subscribers
+avg_lifespan_vein = np.mean(vein_pack_lifespans)
+#print(avg_lifespan_vein)
+
+#performing 1 sample t-test
+#Null: The average lifespan of a Vein Pack subscriber is 73 years
+tstat, pval = ttest_1samp(vein_pack_lifespans, 73)
+#print(pval)
+#the avereage lifespan of Vein pack IS significantly different from 73 years
+
+#artery_pack_lifespans
+artery_pack_lifespans = lifespans.lifespan[lifespans.pack == 'artery']
+#avg lifespan artery
+artery_avg_lifespan = np.mean(artery_pack_lifespans)
+#print(artery_avg_lifespan)
+#performing 2 sampe t-test
+#Null: The average lifespan of Vein pack subscriber is equal to the average lifespan of an Artery Pack subscriber
+from scipy.stats import ttest_ind
+tstat, pval = ttest_ind(vein_pack_lifespans, artery_pack_lifespans)
+#print(pval)
+#The average lifespan of an Artery Pack subscriber is NOT significantly different from Vein Pack
+
+
+#SIDE EFFECTS
+print(iron.head())
+#Is there an association between the pack that a subscriber gets (VEIN vs ARTERY) and their iron level?
+
+#crosstab
+
+Xtab = pd.crosstab(iron.pack, iron.iron)
+print(Xtab)
+
+#Performing Chi 2 test
+#NULL: THERE IS NOT AN ASSOCIATION BETWEEN WHICH PACK someone subscribes to and thei iron level
+from scipy.stats import chi2_contingency
+chi2, pval, dof, exp = chi2_contingency(Xtab)
+print(pval)
+
+#there is strong association between pack and iron level

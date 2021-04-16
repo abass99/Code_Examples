@@ -1,0 +1,37 @@
+import noshmishmosh
+import numpy as np
+
+#getting baseline conversion rates
+all_visitors = noshmishmosh.customer_visits
+
+#visitors who purchase
+paying_visitors = noshmishmosh.purchasing_customers
+
+#the length of each vars
+total_visitor_count = len(all_visitors)
+paying_visitor_count = len(paying_visitors)
+
+#baseline:
+baseline_percent = paying_visitor_count / total_visitor_count * 100
+print(baseline_percent)
+
+#money spent by customer in a typical week
+payment_history = noshmishmosh.money_spent
+
+#average payment per paying customer
+average_payment = np.mean(payment_history)
+print(average_payment)
+
+#new customers needed
+new_customers_needed = np.ceil(1240 /average_payment)
+print(new_customers_needed)
+
+#additional percent of weekly visitors who must make a purchase in order to make this change
+percentage_point_increase = new_customers_needed / total_visitor_count * 100
+print(percentage_point_increase)
+
+#finding mde
+mde = percentage_point_increase / baseline_percent * 100
+print(mde)
+
+ab_sample_size = 490

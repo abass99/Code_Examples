@@ -1,0 +1,77 @@
+# Import libraries
+import numpy as np
+import pandas as pd
+import codecademylib3
+
+# Import data
+dogs = pd.read_csv('dog_data.csv')
+
+# Subset to just whippets, terriers, and pitbulls
+dogs_wtp = dogs[dogs.breed.isin(['whippet', 'terrier', 'pitbull'])]
+
+# Subset to just poodles and shihtzus
+dogs_ps = dogs[dogs.breed.isin(['poodle', 'shihtzu'])]
+
+
+print(dogs.head())
+
+#Are whippets significantly more or less likely than others to be rescue
+whippet_rescue = dogs.is_rescue[dogs.breed == "whippet"]
+
+#rescued whippets count
+num_whippet_rescues = np.sum(whippet_rescue)
+#print(num_whippet_rescues)
+
+#total number of whippets
+num_whippets = len(whippet_rescue)
+#print(num_whippets)
+
+#binomial test
+#NULL: 8% of whippets are rescues
+from scipy.stats import binom_test
+pval = binom_test(num_whippet_rescues, num_whippets, .08)
+#print(pval)
+#as there is NO significance difference in whippet rescue % from population
+
+#Mid - Sized Dog Weights
+def get_weight(Breed):
+  w = dogs.weight[dogs.breed == Breed]
+  return w
+
+wt_whippets = get_weight("whippet")
+wt_terriers = get_weight("terrier")
+wt_pitbulls = get_weight("pitbull")
+
+#Running ANOVA + TUKEY
+#NULL: whippets, terriers, and pitbulls all weigh the same amount on average
+
+from scipy.stats import f_oneway
+fstat, pval = f_oneway(wt_whippets, wt_terriers, wt_pitbulls)
+print(pval)
+
+#There is a significance difference(at least one pair) in average weigh of these breeds
+
+#data subset with only wtp breeds
+dogs_wtp = dogs[dogs.breed.isin(['whippet', 'terrier', 'pitbull'])]
+#Which breeds weigh different amounts on average
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+results = pairwise_tukeyhsd(dogs_wtp.weight, dogs_wtp.breed, 0.05)
+print(results)
+#according to results:
+#there is a significance difference between pitbull-terrier; terrier-whippet breed average weight pairs.
+
+#Poodle and Shihtzu Colors
+
+#subset of poodle and shihtzu
+dogs_ps = dogs[dogs.breed.isin(['poodle', 'shihtzu'])]
+#Does poodle and shihtzu come in diff colors?
+#NULL: There is an association between breed and color
+
+Xtab = pd.crosstab(dogs_ps.breed, dogs_ps.color)
+print(Xtab)
+
+#chi2 test
+from scipy.stats import chi2_contingency
+chi2, pval, dof, expected = chi2_contingency(Xtab)
+print(pval)
+#THere is NOT an association between breed (poodle vs. shihtzu) and color
