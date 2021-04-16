@@ -1,0 +1,115 @@
+import datetime
+import time
+import pandas as pd
+from selenium import webdriver
+
+
+
+print('***** Anna started *****')
+t_start = time.time()
+
+
+# parameter setup
+today = datetime.date.today()
+ctime = datetime.datetime.now().strftime("%H%M")
+now = f"{today}-{ctime}"
+page_num = 1
+df = pd.DataFrame()
+driver_path = "C:/Users/User/Documents/chromedriver.exe" #pilnas path
+sleep_int = 2
+username = 
+password = 
+print("Parameters setup completed")
+
+
+# go to strava
+driver = webdriver.Chrome(driver_path)
+driver.get('https://www.strava.com/login')
+
+
+# accept cookies
+time.sleep(sleep_int)
+
+try:
+    driver.find_element_by_id("stravaCookieBanner")
+    driver.find_element_by_class_name("btn-accept-cookie-banner").click()
+    print("Cookies accepted")
+except:
+    pass
+
+
+# login
+time.sleep(sleep_int)
+
+username_box = driver.find_element_by_id("email")
+username_box.clear()
+username_box.send_keys(username)
+
+password_box = driver.find_element_by_id("password")
+password_box.clear()
+password_box.send_keys(password)
+
+driver.find_element_by_id("login-button").click()
+print("Logged in")
+
+
+# go to segment
+time.sleep(sleep_int)
+
+driver.get()
+print("Segment opened")
+
+
+# display today's results
+time.sleep(sleep_int)
+
+dropdown = driver.find_element_by_class_name('btn.selection.btn-unstyled')
+dropdown.click()
+dropdown.find_element_by_xpath('//a[text()="Today"]').click()
+print("Today's results selected")
+
+
+# scrape results
+
+while True:
+    time.sleep(sleep_int)
+
+    table = driver.find_element_by_id('results')
+    table = table.find_elements_by_css_selector('tr')
+    results = [["Rank", "Name", "Date", "Speed", "HR", "Power", "Time"]]
+    for row in table:
+        row_data = []
+        row_cells = row.find_elements_by_css_selector('td')
+        for item in row_cells:
+            row_data.append(item.text)
+        results.append(row_data)
+
+    df1 = pd.DataFrame()
+    df1 = pd.DataFrame(results)
+    df1 = df1.dropna()
+    new_header = df1.iloc[0]
+    df1 = df1[1:]
+    df1.columns = new_header
+    df = df.append(df1)
+
+    print(f"Page {page_num} results scraped")
+    page_num = page_num + 1
+
+    try:
+        next_page = driver.find_element_by_class_name('next_page')
+        next_page.find_element_by_css_selector('a').click()
+    except:
+        print("All pages scraped")
+        break
+
+print("Scraping completed")
+
+# save to excel
+df.to_excel(f'Results/04_16/results_{now}.xlsx', sheet_name='Results', index=False)
+print("Data saved to excel")
+
+# close and quit
+driver.quit()
+t_total = round(time.time() - t_start, 1)
+print(f'Scraping time - {t_total}s')
+print('***** Anna out *****')
