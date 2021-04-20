@@ -1,0 +1,51 @@
+# Import pandas with alias
+import pandas as pd
+
+# Read in the census dataframe
+census = pd.read_csv('census_data.csv', index_col=0)
+
+# first five rows
+print(census.head())
+
+# variable types
+print(census.dtypes)
+# to change - birth_year to int; higher_tax to categorical; marital_status to categorical
+
+# average birth year
+print(census['birth_year'].unique())
+#replacing 'missing' to 1967
+census['birth_year'] = census['birth_year'].replace(['missing'], 1967)
+#changing data type from str to int
+census['birth_year'] = census['birth_year'].astype('int')
+#counting average birth year
+avg_birth_year = census['birth_year'].mean()
+print(avg_birth_year)
+
+#higher_tax to categorical with order
+census['higher_tax'] = pd.Categorical(census['higher_tax'], ['strongly disagree', 'disagree', 'neutral', 'agree', 'strongly agree'], ordered = True)
+print(census['higher_tax'].unique())
+
+#Lebel encode higher_tax and median
+census['higher_tax'] = census['higher_tax'].cat.codes
+tax_median = census['higher_tax'].median()
+print(tax_median)
+
+#One-Hot encode of marital_status
+census = pd.get_dummies(census, columns = ['marital_status'])
+
+
+#age group
+#creating bins(5year step)
+age_bins= [10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100]
+#labels of bins
+labels = ['10-15','15-20','20-25','25-30','30-35','35-40','40-45','45-50','50-55','55-60','60-65','65-70','70-75','75-80','80-85','85-90','90-95','95-100']
+#creating age column
+census['age'] = 2021 - census['birth_year']
+
+#grouping by age
+census['age_groups'] = pd.cut(census['age'], bins=age_bins)
+
+print(census.dtypes)
+census['age_groups'] = census['age_groups'].cat.codes
+
+print(census)

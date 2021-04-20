@@ -1,0 +1,96 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import codecademylib3_seaborn
+import glob
+import re 
+
+file_extension = ".csv" #csv extension files
+
+file_names = [name for name in glob.glob(f"*{file_extension}")] # list comprehesion for csv file names
+
+data = pd.concat([pd.read_csv(name) for name in file_names])
+#concenating all csv files from file_names list to data df
+
+columns = data.columns #columns of data df
+data_types = data.dtypes #data types of columns
+
+data['Income'] = data['Income'].map(lambda x: x.lstrip('$')) #Removing "$" from Income column (lstrip - for leading chars)
+
+data['Income'] = pd.to_numeric(data['Income']) #Changing column values to numeric 
+
+
+data[['Men','Women']] = data.GenderPop.str.split("_",expand=True) # expanding GenderPop column into two columns - Men | Women
+
+data['Men'] = data['Men'].map(lambda x: x.rstrip('M')) # Removing "M" letter from Men column
+
+data['Women'] = data['Women'].map(lambda x: x.rstrip('F')) # Removing "F" letter from Women column (rstrip - for trailing chars)
+
+data['Men'] = pd.to_numeric(data['Men'])
+data['Women'] = pd.to_numeric(data['Women']) #changing column types to numeric
+
+
+#Filling Na values in Women column with TotalPop - Men values
+data['Women'].fillna((data["TotalPop"] - data["Men"]), inplace = True)
+
+#removed "Unnamed: 0" column
+data = data.drop(['Unnamed: 0'], axis=1)
+#removing dublicates
+new_data = data.drop_duplicates()
+#women ratio in State
+new_data['Women ratio'] = round((new_data['Women'] / new_data['TotalPop']) * 100, 2)
+
+
+# making scatter plot - avg income, number of women
+plt.scatter(new_data['Women ratio'], new_data['Income'])
+plt.xlabel("Women ratio")
+plt.ylabel("AVG State Income")
+plt.title('AVG Income and Women ratio')
+plt.show()
+
+ #list of race column names
+race_columns = ['Hispanic', 'White', 'Black', 'Native', 'Asian', 'Pacific']
+#function to clean race columns (remove "$"; turn into numeric; fill Na) works only for this example, when 1 column is with NaN
+def clean_race(column_names, df, wtr):
+  columns_with_nan = []
+  for name in column_names:
+    df[name] = df[name].map(lambda x: x.strip(wtr), na_action='ignore') # Removing "$" letter
+    df[name] = pd.to_numeric(df[name]) #changing column type to numeric
+    if df[name].isnull().values.any()  == True: #checking if column has na values and adding it to columns_with_nan list
+      columns_with_nan.append(name)
+      print("Column " + name + " has NaN values")
+    else:
+      print("Column " + name + " dont have NaN values")
+  col_to_add_values = [x for x in column_names if x not in columns_with_nan] #removing columns with nan values from column_names
+  for col in columns_with_nan:
+    df[col].fillna(100-(df[col_to_add_values].sum(axis=1)), inplace = True)
+
+  
+#clean race columns and replaces missing values in pacific column with subtraction of other race columns sum
+clean_race(race_columns, new_data, "%")
+
+#creating races dataframe for histograms
+races_data = new_data[['State', 'TotalPop', 'Hispanic', 'White', 'Black', 'Native', 'Asian',
+       'Pacific']]
+
+
+
+#histograms of different races % of population and number of states
+fig, ax = plt.subplots(2,3)
+ax[0][0].hist(races_data["Hispanic"])
+ax[0][1].hist(races_data["Pacific"])
+ax[0][2].hist(races_data["White"])
+ax[1][0].hist(races_data["Black"])
+ax[1][1].hist(races_data["Native"])
+ax[1][2].hist(races_data["Asian"])
+ax[0][0].set(title="Hispanic", xlabel="% of population", ylabel="Number of states")
+ax[0][1].set(title="Pacific", xlabel="% of population", ylabel="Number of states")
+ax[0][2].set(title="White", xlabel="% of population", ylabel="Number of states")
+ax[1][0].set(title="Black", xlabel="% of population", ylabel="Number of states")
+ax[1][1].set(title="Native", xlabel="% of population", ylabel="Number of states")
+ax[1][2].set(title="Asian", xlabel="% of population", ylabel="Number of states")
+fig.suptitle("Different races % of population", y=1.05, fontsize=20)
+fig.tight_layout()
+plt.show()
+
+
